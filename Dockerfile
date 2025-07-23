@@ -65,11 +65,9 @@ RUN mkdir /tmp/packages \
     done \
     && echo "BUILT_MODULES=\"$BUILT_MODULES\"" > /tmp/packages/modules.env
 
-FROM nginx:${NGINX_VERSION}-alpine${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}} AS xnginx
+FROM nginx:${NGINX_VERSION}-alpine${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}}
 RUN --mount=type=bind,target=/tmp/packages/,source=/tmp/packages/,from=builder \
     . /tmp/packages/modules.env \
     && for module in $BUILT_MODULES; do \
            apk add --no-cache --allow-untrusted /tmp/packages/nginx-module-${module}-${NGINX_VERSION}*.apk; \
        done
-
-FROM xnginx
