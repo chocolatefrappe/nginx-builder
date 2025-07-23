@@ -1,9 +1,10 @@
 # check=skip=InvalidDefaultArgInFrom
 
 ARG NGINX_VERSION=stable
+ARG NGINX_VERSION_VARIANT=
 ARG ENABLED_MODULES
 
-FROM nginx:${NGINX_VERSION}-alpine AS builder
+FROM nginx:${NGINX_VERSION}-alpine${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}} AS builder
 
 RUN apk update \
     && apk add linux-headers openssl-dev pcre2-dev zlib-dev openssl abuild \
@@ -64,7 +65,7 @@ RUN mkdir /tmp/packages \
     done \
     && echo "BUILT_MODULES=\"$BUILT_MODULES\"" > /tmp/packages/modules.env
 
-FROM nginx:${NGINX_VERSION}-alpine
+FROM nginx:${NGINX_VERSION}-alpine${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}}
 RUN --mount=type=bind,target=/tmp/packages/,source=/tmp/packages/,from=builder \
     . /tmp/packages/modules.env \
     && for module in $BUILT_MODULES; do \
