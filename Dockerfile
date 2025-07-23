@@ -73,7 +73,7 @@ RUN mkdir /tmp/packages \
     done \
     && echo "BUILT_MODULES=\"$BUILT_MODULES\"" > /tmp/packages/modules.env
 
-FROM nginx:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}} AS xnginx
+FROM nginx:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}}
 
 RUN --mount=type=bind,target=/tmp/packages/,source=/tmp/packages/,from=builder \
     apt-get update \
@@ -82,5 +82,3 @@ RUN --mount=type=bind,target=/tmp/packages/,source=/tmp/packages/,from=builder \
            apt-get install --no-install-suggests --no-install-recommends -y /tmp/packages/nginx-module-${module}_${NGINX_VERSION}*.deb; \
        done \
     && rm -rf /var/lib/apt/lists/
-
-FROM xnginx
