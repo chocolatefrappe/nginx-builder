@@ -33,6 +33,9 @@ RUN set -ex \
         exit 1; \
     fi
 
+# Add 3rd party modules
+ADD https://github.com/chocolatefrappe/nginx-builder.git#modules /modules
+
 WORKDIR /pkg-oss
 RUN mkdir /tmp/packages \
     && for module in $ENABLED_MODULES; do \
