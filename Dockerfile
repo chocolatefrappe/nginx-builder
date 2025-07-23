@@ -7,6 +7,18 @@ ARG ENABLED_MODULES
 
 FROM ${NGINX_FROM_IMAGE}:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}} AS builder
 
+ARG ENABLED_MODULES
+
+SHELL ["/bin/bash", "-exo", "pipefail", "-c"]
+
+RUN if [ "$ENABLED_MODULES" = "" ]; then \
+        echo "No additional modules enabled, exiting"; \
+        exit 1; \
+    fi
+
+# Add 3rd party modules
+ADD https://github.com/chocolatefrappe/nginx-builder.git#modules /modules
+
 RUN apt-get update \
     && apt-get install -y --no-install-suggests --no-install-recommends \
                 patch make wget git devscripts debhelper dpkg-dev \
@@ -21,23 +33,10 @@ RUN apt-get update \
     else \
         echo "XSLScript checksum verification failed!"; \
         exit 1; \
-    fi
-
-ADD https://github.com/nginx/pkg-oss.git#${NGINX_VERSION}-${PKG_RELEASE%%~*} /pkg-oss
-
-ARG ENABLED_MODULES
-
-RUN set -ex \
-    && if [ "$ENABLED_MODULES" = "" ]; then \
-        echo "No additional modules enabled, exiting"; \
-        exit 1; \
-    fi
-
-# Add 3rd party modules
-ADD https://github.com/chocolatefrappe/nginx-builder.git#modules /modules
-
-WORKDIR /pkg-oss
-RUN mkdir /tmp/packages \
+    fi \
+    && git clone -b ${NGINX_VERSION}-${PKG_RELEASE%%~*} https://github.com/nginx/pkg-oss/ \
+    && cd pkg-oss \
+    && mkdir /tmp/packages \
     && for module in $ENABLED_MODULES; do \
         echo "Building $module for nginx-$NGINX_VERSION"; \
         if [ -d /modules/$module ]; then \
@@ -78,7 +77,6 @@ RUN mkdir /tmp/packages \
     && echo "BUILT_MODULES=\"$BUILT_MODULES\"" > /tmp/packages/modules.env
 
 FROM ${NGINX_FROM_IMAGE}:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}}
-
 RUN --mount=type=bind,target=/tmp/packages/,source=/tmp/packages/,from=builder \
     apt-get update \
     && . /tmp/packages/modules.env \
