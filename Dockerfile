@@ -7,20 +7,11 @@ ARG ENABLED_MODULES
 
 FROM ${NGINX_FROM_IMAGE}:${NGINX_VERSION}-alpine${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}} AS builder
 
-RUN apk update \
-    && apk add linux-headers openssl-dev pcre2-dev zlib-dev openssl abuild \
-               musl-dev libxslt libxml2-utils make mercurial gcc unzip git \
-               xz g++ coreutils curl \
-    # allow abuild as a root user \
-    && printf "#!/bin/sh\\nSETFATTR=true /usr/bin/abuild -F \"\$@\"\\n" > /usr/local/bin/abuild \
-    && chmod +x /usr/local/bin/abuild
-
-ADD https://github.com/nginx/pkg-oss.git#${NGINX_VERSION}-${PKG_RELEASE} /pkg-oss
-
 ARG ENABLED_MODULES
 
-RUN set -ex \
-    && if [ "$ENABLED_MODULES" = "" ]; then \
+SHELL ["/bin/ash", "-exo", "pipefail", "-c"]
+
+RUN if [ "$ENABLED_MODULES" = "" ]; then \
         echo "No additional modules enabled, exiting"; \
         exit 1; \
     fi
@@ -28,8 +19,16 @@ RUN set -ex \
 # Add 3rd party modules
 ADD https://github.com/chocolatefrappe/nginx-builder.git#modules /modules
 
-WORKDIR /pkg-oss
-RUN mkdir /tmp/packages \
+RUN apk update \
+    && apk add linux-headers openssl-dev pcre2-dev zlib-dev openssl abuild \
+               musl-dev libxslt libxml2-utils make gcc unzip git \
+               xz g++ coreutils curl \
+    # allow abuild as a root user \
+    && printf "#!/bin/sh\\nSETFATTR=true /usr/bin/abuild -F \"\$@\"\\n" > /usr/local/bin/abuild \
+    && chmod +x /usr/local/bin/abuild \
+    && git clone -b ${NGINX_VERSION}-${PKG_RELEASE} https://github.com/nginx/pkg-oss/ \
+    && cd pkg-oss \
+    && mkdir /tmp/packages \
     && for module in $ENABLED_MODULES; do \
         echo "Building $module for nginx-$NGINX_VERSION"; \
         if [ -d /modules/$module ]; then \
