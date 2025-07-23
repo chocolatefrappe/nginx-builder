@@ -1,10 +1,11 @@
 # check=skip=InvalidDefaultArgInFrom
 
+ARG NGINX_FROM_IMAGE=nginx
 ARG NGINX_VERSION=stable
 ARG NGINX_VERSION_VARIANT=
 ARG ENABLED_MODULES
 
-FROM nginx:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}} AS builder
+FROM ${NGINX_FROM_IMAGE}:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}} AS builder
 
 RUN apt-get update \
     && apt-get install -y --no-install-suggests --no-install-recommends \
@@ -73,7 +74,7 @@ RUN mkdir /tmp/packages \
     done \
     && echo "BUILT_MODULES=\"$BUILT_MODULES\"" > /tmp/packages/modules.env
 
-FROM nginx:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}}
+FROM ${NGINX_FROM_IMAGE}:${NGINX_VERSION}${NGINX_VERSION_VARIANT:+-${NGINX_VERSION_VARIANT}}
 
 RUN --mount=type=bind,target=/tmp/packages/,source=/tmp/packages/,from=builder \
     apt-get update \
