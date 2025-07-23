@@ -35,3 +35,7 @@ FROM xnginx
 # Just remember that the modules you specified in the builder will be available
 # in the image, so you can use them in your configuration.
 ```
+
+## Supported Modules
+
+All modules are pulled from the official [NGINX repository](https://github.com/nginx/pkg-oss/). Please visit the repository for the full list of available modules.
